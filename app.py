@@ -4,164 +4,167 @@ import plotly.graph_objects as go
 from scipy.spatial import distance_matrix
 import hashlib
 
-# 1. CONFIGURAÇÃO DA INTERFACE
-st.set_page_config(page_title="TopoLogos 4D | Neuropsicanálise e Ondas", layout="wide")
-st.title("TopoLogos 4D: Matriz Neuropsicanalítica")
-st.markdown("""
-Representação tetradimensional (Espaço 3D + Tempo) do processamento do Significante. 
-As ondas propagam-se através da anatomia topológica neural, moduladas por vetores psicanalíticos e farmacológicos.
-""")
+# CONFIGURAÇÃO DE SEGURANÇA E INTERFACE
+st.set_page_config(page_title="TopoLogos 4D | Matriz de Interferência", layout="wide")
 
-# 2. PAINEL DE CONTROLO CLÍNICO E FÍSICO
-st.sidebar.header("Vetores Cronotopológicos")
+# Autenticação Administrativa
+if 'autenticado' not in st.session_state:
+    st.session_state['autenticado'] = False
 
-significante = st.sidebar.text_input("Insira o Significante (Palavra):", "Angústia")
-tempo = st.sidebar.slider("Tempo (4ª Dimensão - t):", 0.0, 10.0, 1.0, 0.1)
+if not st.session_state['autenticado']:
+    st.title("Acesso Restrito - Espaço Clínico")
+    senha = st.text_input("Senha Administrativa:", type="password")
+    if st.button("Autenticar"):
+        if senha == "admin123": # Altere conforme necessário
+            st.session_state['autenticado'] = True
+            st.rerun()
+        else:
+            st.error("Credenciais inválidas.")
+    st.stop()
 
-st.sidebar.header("Vetores Neurofarmacológicos")
-st.sidebar.markdown("*Moduladores da Equação Ondulatória*")
-gaba = st.sidebar.slider("GABA (Inibição / Amortecimento - γ):", 0.1, 5.0, 1.5)
-glutamato = st.sidebar.slider("Glutamato (Excitação / Amplitude - A):", 0.1, 5.0, 2.0)
-dopamina = st.sidebar.slider("Dopamina (Velocidade de Propagação - ω):", 1.0, 10.0, 5.0)
-serotonina = st.sidebar.slider("Serotonina (Coerência de Fase - φ):", 0.0, 3.14, 0.0)
+# PAINEL DE CONTROLE VISUAL (Estilo Construtor)
+st.sidebar.title("Painel de Controle Estrutural")
 
-# 3. GERAÇÃO CIENTÍFICA DA ARQUITETURA NEURAL (NUVEM 3D)
+st.sidebar.markdown("### 1. Estética e Identidade Visual")
+tema_fundo = st.sidebar.radio("Fundo do Gráfico:", ["Branco Puro (Clínico)", "Preto (Profundo)"])
+bg_color = 'white' if "Branco" in tema_fundo else 'black'
+font_color = 'black' if "Branco" in tema_fundo else 'white'
+escala_2d = st.sidebar.selectbox("Paleta da Fatia Temporal 2D:", ["Magma", "Viridis", "Inferno"])
+escala_3d = st.sidebar.selectbox("Paleta da Estrutura 3D:", ["Greys", "Blues", "Purples"])
+
+st.sidebar.markdown("### 2. Dados Clínicos e Criptografia")
+significante = st.sidebar.text_input("Insira o Significante Parental/Clínico:", "Nome-do-Pai")
+# Criptografia do significante para gerar a topologia sem expor os dados no motor matemático
+hash_significante = hashlib.sha256(significante.encode('utf-8')).hexdigest()
+
+st.sidebar.markdown("### 3. Neurofarmacologia e Física")
+gaba = st.sidebar.slider("GABA (Inibição / Atenuação - γ):", 0.1, 3.0, 1.2)
+glutamato = st.sidebar.slider("Glutamato (Amplitude - A):", 1.0, 5.0, 2.5)
+dopamina = st.sidebar.slider("Dopamina (Velocidade/Freq - ω):", 1.0, 10.0, 4.0)
+
+st.sidebar.markdown("### 4. Controle Holográfico (Tempo e Espaço)")
+tempo_t = st.sidebar.slider("Momento da Sessão (Tempo - t):", 0.0, 20.0, 0.0, 0.1)
+corte_z = st.sidebar.slider("Altura do Escorenate 2D (Eixo Z):", -4.0, 4.0, 0.0, 0.2)
+
+# GERAÇÃO DA ARQUITETURA NEURAL 3D
 @st.cache_data
-def gerar_cerebro_matematico(resolucao=600):
-    """Gera uma aproximação de rede neural baseada na morfologia lobar."""
-    np.random.seed(42) # Mantém a estrutura anatómica constante
-    
-    def gerar_lobo(centro, raios, num_pontos, nome):
-        u = np.random.rand(num_pontos)
-        v = np.random.rand(num_pontos)
-        theta = u * 2.0 * np.pi
-        phi = np.arccos(2.0 * v - 1.0)
-        r = np.cbrt(np.random.rand(num_pontos))
-        
+def gerar_rede_neural():
+    np.random.seed(42)
+    def criar_lobo(centro, raios, n_pontos, nome):
+        u, v = np.random.rand(n_pontos), np.random.rand(n_pontos)
+        theta, phi = u * 2 * np.pi, np.arccos(2 * v - 1)
+        r = np.cbrt(np.random.rand(n_pontos))
         x = centro[0] + raios[0] * r * np.sin(phi) * np.cos(theta)
         y = centro[1] + raios[1] * r * np.sin(phi) * np.sin(theta)
         z = centro[2] + raios[2] * r * np.cos(phi)
-        
-        return np.column_stack((x, y, z)), [nome]*num_pontos
+        return np.column_stack((x, y, z)), [nome]*n_pontos
 
-    # Distribuição de neurónios por lobos funcionais
-    frontal, c_f = gerar_lobo((0, 4, 2), (4, 3, 3), int(resolucao*0.3), 'Frontal (Linguagem/Broca)')
-    parietal, c_p = gerar_lobo((0, 0, 5), (4, 3, 2), int(resolucao*0.2), 'Parietal (Sensorial)')
-    occipital, c_o = gerar_lobo((0, -5, 1), (3, 2, 3), int(resolucao*0.15), 'Occipital (Visão)')
-    temporal_esq, c_te = gerar_lobo((-4, -1, -1), (2, 4, 2), int(resolucao*0.1), 'Temporal Esq (Wernicke)')
-    temporal_dir, c_td = gerar_lobo((4, -1, -1), (2, 4, 2), int(resolucao*0.1), 'Temporal Dir')
-    limbico, c_l = gerar_lobo((0, 0, 0), (2, 2, 2), int(resolucao*0.15), 'Sistema Límbico (Pulsão/Emoção)')
-
-    nos = np.vstack((frontal, parietal, occipital, temporal_esq, temporal_dir, limbico))
-    labels = c_f + c_p + c_o + c_te + c_td + c_l
-    return nos, labels
-
-nos_neurais, labels_neurais = gerar_cerebro_matematico(800)
-
-# 4. LINGUÍSTICA LACANIANA E MAPEAMENTO NEURAL
-def calcular_foco_significante(texto, nos):
-    """O significante atinge regiões cerebrais específicas baseado no seu peso estrutural."""
-    hash_obj = hashlib.md5(texto.encode('utf-8')).hexdigest()
-    # O hash determina o índice do nó "epicentro" do trauma/perturbação
-    idx_real = int(hash_obj[0:8], 16) % len(nos)
-    idx_simbolico = int(hash_obj[8:16], 16) % len(nos)
-    idx_imaginario = int(hash_obj[16:24], 16) % len(nos)
+    # Proporções cerebrais
+    n_f, l_f = criar_lobo((0, 3, 2), (3, 2, 2), 200, "Córtex Pré-Frontal / Broca")
+    n_t, l_t = criar_lobo((0, -1, -2), (4, 3, 2), 150, "Lobo Temporal / Wernicke")
+    n_l, l_l = criar_lobo((0, 0, 0), (2, 2, 2), 150, "Sistema Límbico")
     
-    return nos[idx_real], nos[idx_simbolico], nos[idx_imaginario]
+    nos = np.vstack((n_f, n_t, n_l))
+    return nos, l_f + l_t + l_l
 
-ep_R, ep_S, ep_I = calcular_foco_significante(significante, nos_neurais)
+nos, labels = gerar_rede_neural()
 
-# 5. FÍSICA ONDULATÓRIA EM REDE NEURAL E NEUROFARMACOLOGIA
-def calcular_propagacao_4D(nos, epicentro, t, amplitude, inibicao, vel, fase):
-    """
-    Equação da Onda Esférica Amortecida (4D):
-    Z(r, t) = A * e^(-γ * r) * cos(k*r - ω*t + φ)
-    """
-    distancias = np.linalg.norm(nos - epicentro, axis=1)
-    distancias_seguras = np.where(distancias == 0, 0.1, distancias)
+# DETERMINAÇÃO DOS EPICENTROS (RSI) BASEADOS NO HASH DO SIGNIFICANTE
+idx_R = int(hash_significante[0:4], 16) % len(nos)
+idx_S = int(hash_significante[4:8], 16) % len(nos)
+idx_I = int(hash_significante[8:12], 16) % len(nos)
+focos = [nos[idx_R], nos[idx_S], nos[idx_I]]
+
+# CÁLCULO 1: O BULK 3D (Cicatriz Estrutural / Inconsciente Atemporal)
+I_3D = np.zeros(len(nos))
+for foco in focos:
+    dist = np.linalg.norm(nos - foco, axis=1)
+    dist_segura = np.where(dist == 0, 0.1, dist)
+    # Integral de Feynman colapsada na assíntota do trauma
+    I_3D += (glutamato**2) / (dist_segura**2)
+
+# Normalização para renderização
+I_3D = np.clip(I_3D, 0, 15)
+
+# CÁLCULO 2: A FRONTEIRA HOLOGRÁFICA 2D (O Tempo Presente)
+malha_xy = np.linspace(-6, 6, 80)
+X, Y = np.meshgrid(malha_xy, malha_xy)
+Z_plano = np.full_like(X, corte_z)
+
+Psi_2D = np.zeros_like(X)
+k_onda = 2.0
+
+for foco in focos:
+    # Distância Euclidiana de cada ponto do plano até os epicentros 3D
+    dist_plano = np.sqrt((X - foco[0])**2 + (Y - foco[1])**2 + (Z_plano - foco[2])**2)
+    dist_plano = np.where(dist_plano == 0, 0.1, dist_plano)
     
-    # K é o número de onda. ω (velocidade angular) é modulada pela Dopamina
-    k = 2.0 
+    amortecimento = np.exp(-gaba * dist_plano * 0.3)
+    fase_propagacao = np.cos(k_onda * dist_plano - dopamina * tempo_t)
     
-    termo_amortecimento = np.exp(-inibicao * distancias_seguras * 0.5)
-    termo_oscilatorio = np.cos(k * distancias_seguras - vel * t + fase)
-    
-    # A intensidade da ativação neural
-    intensidade = amplitude * termo_amortecimento * termo_oscilatorio
-    return intensidade
+    Psi_2D += glutamato * amortecimento * fase_propagacao
 
-# Superposição dos três registos (RSI) no cérebro perante o tempo t
-int_R = calcular_propagacao_4D(nos_neurais, ep_R, tempo, glutamato, gaba, dopamina, serotonina)
-int_S = calcular_propagacao_4D(nos_neurais, ep_S, tempo, glutamato, gaba, dopamina, serotonina)
-int_I = calcular_propagacao_4D(nos_neurais, ep_I, tempo, glutamato, gaba, dopamina, serotonina)
-
-Intensidade_Total = int_R + int_S + int_I
-
-# 6. RENDERIZAÇÃO 4D DA ARQUITETURA NEURAL
-# Criamos as arestas (sinapses) ligando apenas neurónios próximos (limiar de distância = 1.8)
-matriz_dist = distance_matrix(nos_neurais, nos_neurais)
-sinapses_x, sinapses_y, sinapses_z = [], [], []
-
-# Otimização matemática para desenhar a rede sem sobrecarregar o renderizador
-limiar_conexao = 1.5
-for i in range(len(nos_neurais)):
-    conexoes = np.where((matriz_dist[i] > 0) & (matriz_dist[i] < limiar_conexao))[0]
-    # Limitar o número de ligações por neurónio para clareza visual
-    for j in conexoes[:3]: 
-        sinapses_x.extend([nos_neurais[i, 0], nos_neurais[j, 0], None])
-        sinapses_y.extend([nos_neurais[i, 1], nos_neurais[j, 1], None])
-        sinapses_z.extend([nos_neurais[i, 2], nos_neurais[j, 2], None])
-
+# RENDERIZAÇÃO COMPLEXA PLOTLY
 fig = go.Figure()
 
-# Camada 1: Estrutura Sináptica (As vias de escoamento da pulsão)
+# 1. Plotagem da Cicatriz 3D (A Estrutura de Base)
 fig.add_trace(go.Scatter3d(
-    x=sinapses_x, y=sinapses_y, z=sinapses_z,
-    mode='lines',
-    line=dict(color='rgba(255, 255, 255, 0.05)', width=1),
-    hoverinfo='none'
-))
-
-# Camada 2: Nós Neurais Ativados (As representações/significantes)
-fig.add_trace(go.Scatter3d(
-    x=nos_neurais[:, 0],
-    y=nos_neurais[:, 1],
-    z=nos_neurais[:, 2],
+    x=nos[:, 0], y=nos[:, 1], z=nos[:, 2],
     mode='markers',
     marker=dict(
-        size=np.abs(Intensidade_Total) * 3 + 2, # O tamanho reflete o nível de excitação local
-        color=Intensidade_Total,
-        colorscale='Plasma',
-        opacity=0.8,
-        colorbar=dict(title="Carga Pulsional (mV)"),
-        cmin=-glutamato*2,
-        cmax=glutamato*2
+        size=I_3D * 1.5 + 2,
+        color=I_3D,
+        colorscale=escala_3d,
+        opacity=0.4, # Semitransparente para representar o traço de memória
+        showscale=False
     ),
-    text=[f"Região: {lbl}<br>Excitação: {val:.2f}" for lbl, val in zip(labels_neurais, Intensidade_Total)],
-    hoverinfo='text'
+    text=[f"{lbl}<br>Intensidade Base: {val:.2f}" for lbl, val in zip(labels, I_3D)],
+    hoverinfo='text',
+    name='Estrutura (Bulk)'
+))
+
+# 2. Plotagem do Plano Holográfico 2D (A Ondulação Temporal)
+fig.add_trace(go.Surface(
+    x=X, y=Y, z=Z_plano,
+    surfacecolor=Psi_2D,
+    colorscale=escala_2d,
+    opacity=0.85,
+    cmin=-glutamato*1.5,
+    cmax=glutamato*1.5,
+    name='Fatia Temporal 2D',
+    showscale=False
+))
+
+# 3. Destaque dos Focos do Real, Simbólico e Imaginário
+fig.add_trace(go.Scatter3d(
+    x=[f[0] for f in focos], y=[f[1] for f in focos], z=[f[2] for f in focos],
+    mode='markers+text',
+    text=['Real', 'Simbólico', 'Imaginário'],
+    textposition="top center",
+    marker=dict(size=12, color='red', symbol='diamond'),
+    textfont=dict(color=font_color, family="Arial, sans-serif", size=14),
+    name='Nós de Amarração'
 ))
 
 fig.update_layout(
-    title=f"Ressonância Neural do Significante: '{significante}' no Tempo t={tempo}s",
+    title=dict(text=f"Projeção Topológica do Significante Holográfico", font=dict(color=font_color, size=24, family="Arial, sans-serif")),
     autosize=True,
-    width=1100,
+    width=1200,
     height=800,
-    margin=dict(l=0, r=0, b=0, t=40),
     scene=dict(
-        xaxis=dict(showgrid=False, zeroline=False, visible=False),
-        yaxis=dict(showgrid=False, zeroline=False, visible=False),
-        zaxis=dict(showgrid=False, zeroline=False, visible=False),
-        bgcolor='black'
+        xaxis=dict(showbackground=False, showgrid=False, zeroline=False, visible=False),
+        yaxis=dict(showbackground=False, showgrid=False, zeroline=False, visible=False),
+        zaxis=dict(showbackground=False, showgrid=False, zeroline=False, visible=False),
+        bgcolor=bg_color
     ),
-    paper_bgcolor='black',
-    font=dict(color='white')
+    paper_bgcolor=bg_color,
+    margin=dict(l=0, r=0, b=0, t=60)
 )
 
 st.plotly_chart(fig, use_container_width=True)
 
-st.markdown("""
-**Análise Científica:**  
-A matriz acima é um modelo biológico tetradimensional aproximado. O **Tempo (t)** atua como a fase oscilatória da onda[span_2](start_span)[span_2](end_span). 
-Quando altera a barra de Tempo, está a visualizar a propagação da energia psíquica e elétrica através dos tratos neurais, partindo 
-dos nós do Real, Simbólico e Imaginário instigados pelo Significante inserido[span_3](start_span)[span_3](end_span). Medicamentos excitatórios amplificam a ressonância global, enquanto inibidores (como o GABA) forçam o decaimento rápido do sinal no espaço[span_4](start_span)[span_4](end_span).
-""")
+st.markdown(f"""
+<div style="color: {font_color}; font-family: Arial, sans-serif; padding: 20px;">
+A nuvem tridimensional fixa demonstra a <b>potenciação de longa duração</b> — a marca indelével do aprendizado e do trauma deixada pelo significante parental na arquitetura neurobiológica. O plano vibrante bidimensional, ajustável no eixo Z, representa a consciência e o discurso no momento analítico <b>t</b>, revelando como as ondas de neurotransmissores atravessam essa estrutura estática em tempo real.
+</div>
+""", unsafe_allow_html=True)
